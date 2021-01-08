@@ -31,6 +31,13 @@ read_parameters()
       "--mqtt-base-topic=")
         mqtt_base_topic="${option_value}"
       ;;
+      "--user=")
+        user="${option_value}"
+      ;;
+     "--password=")
+        password="${option_value}"
+      ;;
+
       "--debug=")
         debug="${option_value}"
       ;;
@@ -39,7 +46,7 @@ read_parameters()
         exit 1
       ;;
     esac
-    
+
     shift                  #Parameter verschieben $2->$1, $3->$2, $4->$3,...
   done
 }
@@ -51,6 +58,8 @@ then
   echo "debug = ${debug}"
   echo "mqtt_server = ${mqtt_server}"
   echo "mqtt_base_topic = ${mqtt_base_topic}"
+  echo "user= ${user}"
+  echo "password= ${password}"
 fi
 
 # Parameter $1 is the remote defined in lirc.
@@ -108,7 +117,7 @@ interprete_mqtt_command()
   then
     echo "SEND_ONCE \"${remote}\" ${commands}" | xargs irsend
   fi
-  
+
   if [ "${send}" != "once"  -a  "${send}" != "hold" ]
   then
     echo "The attribute 'send' needs to have a value 'once' or 'hold'. '${send}' is not valid." >&2
@@ -145,11 +154,11 @@ loop_for_mqtt_set()
   do
     echo "${remote}" "${line}"
     interprete_mqtt_command "${remote}" "${line}" &
-  done < <( mqtt sub -h "${mqtt_server}" -t "${mqtt_base_topic}/${remote}/send" )
+  done < <( mqtt sub -h "${mqtt_server}" --user ${user} --password ${password} -t "${mqtt_base_topic}/${remote}/send" )
 }
 
 #MQTT test
-mqtt_test_results=$( mqtt test -h "${mqtt_server}" )
+mqtt_test_results=$( mqtt test --user ${user} --password ${password} -h "${mqtt_server}" )
 if [ "${debug}" != "0" ]; then echo "${mqtt_test_results}"; fi
 echo "${mqtt_test_results}" | grep -q "OK"
 if [ "$?" != "0" ]
